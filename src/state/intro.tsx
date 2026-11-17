@@ -16,6 +16,7 @@ const IntroContext = createContext<IntroState | null>(null)
 export function IntroProvider({ children }: { children: ReactNode }) {
   // 상세 URL로 직접 들어오면 인트로를 건너뜁니다.
   const [entered, setEntered] = useState(() => {
+    if (import.meta.env.VITE_EMBED) return false
     const path = window.location.pathname.replace(import.meta.env.BASE_URL, '/')
     return path !== '/' && path !== ''
   })
