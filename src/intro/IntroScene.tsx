@@ -33,14 +33,14 @@ export default function IntroScene({ bridge }: { bridge: Bridge }) {
       <RigSync bridge={bridge} rig={rig} />
       <Backdrop />
       <ambientLight intensity={0.6} />
-      <directionalLight position={[3, 5, 6]} intensity={1.6} />
+      <directionalLight position={[3, 5, 6]} intensity={1.6} color="#fff6ec" />
       <directionalLight position={[-4, -2, 3]} intensity={0.6} color="#e6d8ff" />
       {/* 외부 HDR 없이 Lightformer로 만든 부드러운 반사 환경 */}
       <Environment resolution={256} frames={1}>
-        <color attach="background" args={['#f3eefb']} />
-        <Lightformer form="rect" intensity={3} position={[0, 4, 5]} scale={[10, 3, 1]} color="#ffffff" />
-        <Lightformer form="rect" intensity={1.6} position={[-5, 0, 3]} scale={[3, 8, 1]} color="#d8c6ff" />
-        <Lightformer form="rect" intensity={1.4} position={[5, -1, 3]} scale={[3, 8, 1]} color="#ffd9ec" />
+        <color attach="background" args={['#fbe4ef']} />
+        <Lightformer form="rect" intensity={3} position={[0, 4, 5]} scale={[10, 3, 1]} color="#fffaf2" />
+        <Lightformer form="rect" intensity={1.6} position={[-5, 0, 3]} scale={[3, 8, 1]} color="#e6d6ff" />
+        <Lightformer form="rect" intensity={1.6} position={[5, -1, 3]} scale={[3, 8, 1]} color="#ffd2e6" />
         <Lightformer form="ring" intensity={2} position={[0, -4, 4]} scale={4} color="#ffffff" />
       </Environment>
       <Lock bridge={bridge} rig={rig} />
@@ -90,7 +90,7 @@ function AmbientSparkles({ rig }: { rig: Rig }) {
   })
   return (
     <group ref={ref}>
-      <Sparkles count={26} scale={[3.4, 3, 1.6]} size={2.2} speed={0.25} opacity={0.75} color="#cbb7ff" noise={0.6} />
+      <Sparkles count={26} scale={[3.4, 3, 1.6]} size={2.2} speed={0.25} opacity={0.75} color="#fff4fb" noise={0.6} />
     </group>
   )
 }

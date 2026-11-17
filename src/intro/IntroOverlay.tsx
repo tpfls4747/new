@@ -142,7 +142,7 @@ export function IntroOverlay() {
   }, [bridge, springBack])
 
   const hint = !show3D
-    ? '이 환경에서는 3D 인트로를 표시할 수 없어요. 아래 버튼으로 바로 볼 수 있어요.'
+    ? '이 환경에서는 3D 인트로를 표시할 수 없어요.'
     : !ready
       ? '자물쇠를 준비하고 있어요…'
       : near && phase === 'dragging'
@@ -159,6 +159,10 @@ export function IntroOverlay() {
       aria-label="인트로"
       role="region"
     >
+      {/* 키보드·보조기기용: 포커스했을 때만 보이는 건너뛰기 */}
+      <button type="button" className="intro-skip-link" onClick={finish}>
+        인트로 건너뛰고 프로젝트 보기
+      </button>
       <div className="intro-inner">
         {show3D && (
           <SceneBoundary onError={() => setFailed(true)}>
@@ -201,7 +205,7 @@ export function IntroOverlay() {
               tabIndex={canDrag ? 0 : -1}
               aria-hidden={!show3D}
               aria-disabled={!canDrag}
-              aria-label="은빛 열쇠. 끌어서 자물쇠에 놓거나 Enter 키로 꽂을 수 있어요"
+              aria-label="금빛 열쇠. 끌어서 자물쇠에 놓거나 Enter 키로 꽂을 수 있어요"
               onKeyDown={(e) => {
                 if (!canDrag) return
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -220,9 +224,12 @@ export function IntroOverlay() {
             {near && phase === 'dragging' && <span aria-hidden="true">✦ </span>}
             {hint}
           </p>
-          <button type="button" className="button button--primary intro-skip" onClick={finish}>
-            프로젝트 바로 보기 <span aria-hidden="true">→</span>
-          </button>
+          {/* 3D를 쓸 수 없을 때만 입장 버튼을 보여줌 */}
+          {!show3D && (
+            <button type="button" className="button button--primary intro-skip" onClick={finish}>
+              포트폴리오 보기 <span aria-hidden="true">→</span>
+            </button>
+          )}
         </div>
       </div>
     </motion.div>

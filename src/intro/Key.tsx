@@ -5,7 +5,8 @@ import { getSnapPosition, slotDistancePx } from './anchors'
 import { T, clamp01, easeInOutCubic, easeOutCubic, type Bridge, elapsed } from './bridge'
 import type { Rig } from './sceneRig'
 import { screenToWorld } from './sceneRig'
-import { KEY_TIP_X, gemGeometry, starShape } from './shapes'
+import { CrystalMaterial, GoldMaterial } from './materials'
+import { KEY_TIP_X, gemGeometry } from './shapes'
 
 const X = new THREE.Vector3(1, 0, 0)
 const Y = new THREE.Vector3(0, 1, 0)
@@ -14,7 +15,7 @@ const Z = new THREE.Vector3(0, 0, 1)
 const INSERT_DIR_LOCAL = new THREE.Vector3(0.42, 0.3, -1).normalize()
 
 /**
- * 은빛(살짝 핑크) 열쇠. 원점 = 별 손잡이 중심 = 회전 피벗(열쇠 축 위), 끝은 +X 방향.
+ * 금빛 열쇠 (링 손잡이 + 크리스털). 원점 = 별 손잡이 중심 = 회전 피벗(열쇠 축 위), 끝은 +X 방향.
  * 대기·드래그: DOM 드래그 핸들을 따라가며 끝이 구멍을 향함.
  * 성공 시: 자동 정렬(120ms) → 삽입(100ms) → 자기 축 90도 회전(240ms).
  */
@@ -42,32 +43,27 @@ export function Key({ bridge, rig }: { bridge: Bridge; rig: Rig }) {
     [],
   )
 
-  const geo = useMemo(() => {
-    const star = new THREE.ExtrudeGeometry(starShape(5, 0.36, 0.2, Math.PI), {
-      depth: 0.06,
-      bevelEnabled: true,
-      bevelThickness: 0.045,
-      bevelSize: 0.05,
-      bevelSegments: 5,
-    })
-    star.translate(0, 0, -0.03)
-    return {
-      star,
-      gem: gemGeometry(0.105, 8),
+  const geo = useMemo(
+    () => ({
+      ring: new THREE.TorusGeometry(0.29, 0.06, 20, 56),
+      bezel: new THREE.TorusGeometry(0.19, 0.03, 12, 40),
+      stud: new THREE.SphereGeometry(0.045, 16, 12),
+      gem: gemGeometry(0.17, 8),
       shaft: new THREE.CylinderGeometry(0.045, 0.045, 1.24, 20),
       collar: new THREE.TorusGeometry(0.065, 0.028, 12, 28),
       tooth: new THREE.BoxGeometry(0.2, 0.17, 0.055),
       tooth2: new THREE.BoxGeometry(0.09, 0.1, 0.055),
       cap: new THREE.SphereGeometry(0.046, 16, 12),
-    }
-  }, [])
+    }),
+    [],
+  )
 
   useFrame((state, dt) => {
     const g = group.current
     if (!g || !rig.valid || !rig.tip || !rig.slot) return
     const { camera, size } = state
     const t = state.clock.elapsedTime
-    const keyScale = rig.lockScale * 0.9
+    const keyScale = rig.lockScale * 0.72
     g.scale.setScalar(keyScale)
     const e = elapsed(bridge)
 
@@ -170,50 +166,42 @@ export function Key({ bridge, rig }: { bridge: Bridge; rig: Rig }) {
 
 /** GLB 모델로 교체할 때는 이 컴포넌트를 바꾸고 tip 앵커 위치(KEY_TIP_X)만 맞추면 됩니다. */
 function KeyModel({ geo }: { geo: Record<string, THREE.BufferGeometry> }) {
-  const metal = (
-    <meshPhysicalMaterial
-      color="#f2dfe6"
-      metalness={1}
-      roughness={0.17}
-      clearcoat={0.6}
-      clearcoatRoughness={0.1}
-      envMapIntensity={1.35}
-      sheen={0.4}
-      sheenColor="#ffd4e6"
-    />
-  )
   return (
     <group>
-      {/* 별 손잡이 */}
-      <mesh geometry={geo.star}>{metal}</mesh>
-      {/* 손잡이 가운데 핑크 보석 */}
-      <mesh geometry={geo.gem} position={[0, 0, 0.07]} rotation={[Math.PI / 2, 0, 0]}>
-        <meshPhysicalMaterial
-          color="#ffc6e4"
-          flatShading
-          transmission={0.8}
-          thickness={0.25}
-          ior={2.0}
-          roughness={0.04}
-          emissive="#ff8fca"
-          emissiveIntensity={0.35}
-        />
+      {/* 금색 링 손잡이 + 장식 알 4개 */}
+      <mesh geometry={geo.ring}>
+        <GoldMaterial />
+      </mesh>
+      {[0, 1, 2, 3].map((i) => {
+        const a = Math.PI / 4 + (i * Math.PI) / 2
+        return (
+          <mesh key={i} geometry={geo.stud} position={[Math.cos(a) * 0.29, Math.sin(a) * 0.29, 0.05]}>
+            <GoldMaterial />
+          </mesh>
+        )
+      })}
+      {/* 가운데 크리스털 보석 */}
+      <mesh geometry={geo.bezel} position={[0, 0, 0.0]}>
+        <GoldMaterial />
+      </mesh>
+      <mesh geometry={geo.gem} position={[0, 0, 0.03]} rotation={[Math.PI / 2, 0, 0]}>
+        <CrystalMaterial tint="#eef4ff" glow="#b9c8ff" />
       </mesh>
       <mesh geometry={geo.collar} position={[0.38, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
-        {metal}
+        <GoldMaterial />
       </mesh>
       <mesh geometry={geo.shaft} position={[0.33 + 0.62, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
-        {metal}
+        <GoldMaterial />
       </mesh>
       <mesh geometry={geo.cap} position={[KEY_TIP_X - 0.02, 0, 0]}>
-        {metal}
+        <GoldMaterial />
       </mesh>
       {/* 톱니 */}
       <mesh geometry={geo.tooth} position={[1.34, -0.1, 0]}>
-        {metal}
+        <GoldMaterial />
       </mesh>
       <mesh geometry={geo.tooth2} position={[1.12, -0.07, 0]}>
-        {metal}
+        <GoldMaterial />
       </mesh>
     </group>
   )

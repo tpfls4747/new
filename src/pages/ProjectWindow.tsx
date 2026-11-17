@@ -1,79 +1,127 @@
-import { motion } from 'motion/react'
-import { useEffect, useLayoutEffect, useRef } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { motion, useReducedMotion } from 'motion/react'
+import { useEffect, useRef } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { MediaSlot } from '../components/MediaSlot'
-import { SiteFooter, SiteHeader } from '../components/SiteHeader'
 import { Txt } from '../components/Txt'
 import { getProject, profile, projects, type Project } from '../data/projects'
 
-const SECTIONS = [
-  { id: 'overview', label: '개요와 역할' },
-  { id: 'problem', label: '문제와 근거' },
-  { id: 'alternatives', label: '탐색한 대안' },
-  { id: 'flow', label: '핵심 사용자 흐름' },
-  { id: 'final-ui', label: '최종 UI' },
-  { id: 'validation', label: '검증' },
-] as const
 
-export function ProjectDetail() {
-  const { slug } = useParams()
+
+/**
+ * 프로젝트 창. /projects/:slug 에서 홈 위에 창처럼 열립니다.
+ * 링크로 직접 들어와도 인트로 없이 바로 이 창이 열립니다.
+ */
+export function ProjectWindow({ slug }: { slug: string }) {
   const project = getProject(slug)
   const location = useLocation()
+  const navigate = useNavigate()
+  const reduced = useReducedMotion()
   const titleRef = useRef<HTMLHeadingElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const from = (location.state as { from?: string } | null)?.from
 
-  useLayoutEffect(() => {
-    window.scrollTo({ top: 0 })
-  }, [slug])
+  const close = () => {
+    // 사이트 안에서 열었으면 뒤로 가기(목록 스크롤 유지), 링크로 직접 들어왔으면 홈으로
+    const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0
+    if (from && idx > 0) navigate(-1)
+    else navigate('/', { replace: true })
+  }
 
   useEffect(() => {
+    const prev = document.title
     document.title = project ? `${project.title} — ${profile.nameEn}` : `프로젝트를 찾을 수 없어요 — ${profile.nameEn}`
+    const opener = document.activeElement as HTMLElement | null
     titleRef.current?.focus({ preventScroll: true })
+    scrollRef.current?.scrollTo({ top: 0 })
+    const html = document.documentElement
+    const prevOverflow = html.style.overflow
+    html.style.overflow = 'hidden'
+    return () => {
+      document.title = prev
+      html.style.overflow = prevOverflow
+      opener?.focus?.({ preventScroll: true })
+    }
   }, [project])
 
-  if (!project) return <NotFound />
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
 
-  const cs = project.caseStudy
-  // 홈의 어느 이미지에서 왔는지에 따라 같은 layoutId로 이어지게 합니다.
-  const layoutId = from === 'featured' ? `featured-${project.slug}` : `media-${project.slug}`
-  const idx = projects.findIndex((p) => p.slug === project.slug)
+  const layoutId = project ? (from === 'featured' ? `featured-${project.slug}` : `media-${project.slug}`) : undefined
+  const idx = projects.findIndex((p) => p.slug === slug)
   const next = projects[(idx + 1) % projects.length]
+  const prev = projects[(idx - 1 + projects.length) % projects.length]
+  const cs = project?.caseStudy
 
   return (
-    <div className="page">
-      <SiteHeader />
-      <main id="main" className="detail">
+    <motion.div
+      className="pw-backdrop"
+      initial={reduced ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, transition: { duration: reduced ? 0 : 0.2 } }}
+      onClick={(e) => e.target === e.currentTarget && close()}
+    >
+      <motion.div
+        className="pw"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pw-title"
+        initial={reduced ? false : { y: 40, opacity: 0, scale: 0.98 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={reduced ? { opacity: 0 } : { y: 30, opacity: 0, scale: 0.98, transition: { duration: 0.2 } }}
+        transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+      >
+        <div className="window-bar pw-bar">
+          <span className="window-dots" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+          <span className="window-name">{project ? `${project.titleEn} · ${project.year}` : 'Not found'}</span>
+          <button type="button" className="pw-close" onClick={close} aria-label="프로젝트 창 닫기">
+            ✕
+          </button>
+        </div>
+        <div className="pw-scroll" ref={scrollRef}>
+          {!project ? (
+            <div className="detail not-found">
+              <h1 id="pw-title" ref={titleRef} tabIndex={-1} className="detail-title">
+                프로젝트를 찾을 수 없어요
+              </h1>
+              <Link to="/" className="button button--primary">
+                홈으로
+              </Link>
+            </div>
+          ) : (
+      <main className="detail">
         <header className="detail-hero">
-          <Link to={{ pathname: '/', hash: '#projects' }} className="back-link">
-            ← 모든 프로젝트
-          </Link>
-          <p className="eyebrow">Case study · {project.titleEn}</p>
-          <h1 ref={titleRef} tabIndex={-1} className="detail-title">
-            {project.title}
-          </h1>
-          <p className="detail-question">
-            <Txt value={project.question} />
-          </p>
+          <div className="detail-intro">
+            <p className="detail-kicker">
+              {project.year} <span aria-hidden="true">•</span> {project.category}
+            </p>
+            <h1 id="pw-title" ref={titleRef} tabIndex={-1} className="detail-title">
+              {project.title}
+            </h1>
+            <p className="detail-summary">
+              <Txt value={project.summary} />
+            </p>
+          </div>
+          <div className="row">
+            <p className="row-label">Overview</p>
+            <p className="detail-question">
+              <Txt value={project.question} />
+            </p>
+          </div>
           <motion.div layoutId={layoutId} className="detail-media">
             <MediaSlot media={project.hero} priority />
           </motion.div>
         </header>
 
         <div className="detail-layout">
-          <nav className="toc" aria-label="케이스 스터디 목차">
-            <ol>
-              {SECTIONS.map((s, i) => (
-                <li key={s.id}>
-                  <a href={`#${s.id}`}>
-                    <span aria-hidden="true">{String(i + 1).padStart(2, '0')}</span> {s.label}
-                  </a>
-                </li>
-              ))}
-            </ol>
-          </nav>
-
           <div className="detail-sections">
-            <Section n={1} id="overview" title="프로젝트 개요와 역할">
+            <Section label="Role" id="overview" title="프로젝트 개요와 역할">
               <dl className="meta-grid">
                 <div>
                   <dt>내 역할</dt>
@@ -97,7 +145,7 @@ export function ProjectDetail() {
               ))}
             </Section>
 
-            <Section n={2} id="problem" title="문제와 근거">
+            <Section label="Problem" id="problem" title="문제와 근거">
               {cs ? (
                 <>
                   <p className="prose lead">
@@ -119,7 +167,7 @@ export function ProjectDetail() {
               )}
             </Section>
 
-            <Section n={3} id="alternatives" title="탐색한 대안">
+            <Section label="Options" id="alternatives" title="탐색한 대안">
               {cs ? (
                 <>
                   <ul className="alternatives">
@@ -168,7 +216,7 @@ export function ProjectDetail() {
               )}
             </Section>
 
-            <Section n={4} id="flow" title="핵심 사용자 흐름">
+            <Section label="Flow" id="flow" title="핵심 사용자 흐름">
               {cs ? (
                 <>
                   <ol className="flow">
@@ -193,7 +241,7 @@ export function ProjectDetail() {
               )}
             </Section>
 
-            <Section n={5} id="final-ui" title="최종 UI">
+            <Section label="Final UI" id="final-ui" title="최종 UI">
               {cs ? (
                 <ul className="screens">
                   {cs.finalUI.map((s, i) => (
@@ -210,7 +258,7 @@ export function ProjectDetail() {
               )}
             </Section>
 
-            <Section n={6} id="validation" title={cs?.validation.kind === 'result' ? '검증 결과' : '다음 검증 계획'}>
+            <Section label="Validation" id="validation" title={cs?.validation.kind === 'result' ? '검증 결과' : '다음 검증 계획'}>
               {cs ? (
                 <ul className="evidence">
                   {cs.validation.items.map((v) => (
@@ -229,23 +277,27 @@ export function ProjectDetail() {
           </div>
         </div>
 
-        {next.slug !== project.slug && <NextProject project={next} />}
       </main>
-      <SiteFooter />
-    </div>
+          )}
+        </div>
+        {project && <PillNav prev={prev} next={next} onHome={close} />}
+      </motion.div>
+    </motion.div>
   )
 }
 
-function Section({ n, id, title, children }: { n: number; id: string; title: string; children: React.ReactNode }) {
+function Section({ label, id, title, children }: { label: string; id: string; title: string; children: React.ReactNode }) {
   return (
-    <section id={id} className="cs-section" aria-labelledby={`${id}-title`}>
-      <p className="cs-n" aria-hidden="true">
-        {String(n).padStart(2, '0')}
+    <section id={id} className="cs-section row" aria-labelledby={`${id}-title`}>
+      <p className="row-label" aria-hidden="true">
+        {label}
       </p>
-      <h2 id={`${id}-title`} className="cs-title">
-        {title}
-      </h2>
-      {children}
+      <div className="row-body">
+        <h2 id={`${id}-title`} className="cs-title">
+          {title}
+        </h2>
+        {children}
+      </div>
     </section>
   )
 }
@@ -258,29 +310,23 @@ function Pending({ what }: { what: string }) {
   )
 }
 
-function NextProject({ project }: { project: Project }) {
+/** 창 아래에 떠 있는 이전 · 홈 · 다음 이동 바 */
+function PillNav({ prev, next, onHome }: { prev: Project; next: Project; onHome: () => void }) {
   return (
-    <aside className="next-project" aria-label="다음 프로젝트">
-      <p className="eyebrow">다음 프로젝트</p>
-      <Link to={`/projects/${project.slug}`} state={{ from: 'card' }} className="next-link">
-        {project.title} <span aria-hidden="true">→</span>
+    <nav className="pill-nav" aria-label="프로젝트 이동">
+      <Link to={`/projects/${prev.slug}`} state={{ from: 'index' }} replace className="pill">
+        <small>‹ 이전</small>
+        <span>{prev.titleEn}</span>
       </Link>
-    </aside>
-  )
-}
-
-function NotFound() {
-  return (
-    <div className="page">
-      <SiteHeader />
-      <main id="main" className="detail not-found">
-        <h1 className="detail-title" tabIndex={-1}>
-          프로젝트를 찾을 수 없어요
-        </h1>
-        <Link to="/" className="button button--primary">
-          홈으로
-        </Link>
-      </main>
-    </div>
+      <button type="button" className="pill pill--home" onClick={onHome} aria-label="목록으로 돌아가기">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z" />
+        </svg>
+      </button>
+      <Link to={`/projects/${next.slug}`} state={{ from: 'index' }} replace className="pill">
+        <small>다음 ›</small>
+        <span>{next.titleEn}</span>
+      </Link>
+    </nav>
   )
 }

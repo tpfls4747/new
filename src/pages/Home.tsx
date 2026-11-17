@@ -1,12 +1,14 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useLayoutEffect, useRef } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useMatch } from 'react-router-dom'
+import { Mascot } from '../components/Mascot'
 import { MediaSlot } from '../components/MediaSlot'
-import { ProjectCard } from '../components/ProjectCard'
+import { WorksIndex } from '../components/WorksIndex'
 import { SiteFooter, SiteHeader } from '../components/SiteHeader'
 import { Txt } from '../components/Txt'
 import { featuredProject, profile, projects } from '../data/projects'
 import { IntroOverlay } from '../intro/IntroOverlay'
+import { ProjectWindow } from './ProjectWindow'
 import { useIntro } from '../state/intro'
 
 export function Home() {
@@ -15,10 +17,12 @@ export function Home() {
   const location = useLocation()
   const p = featuredProject
   const reduced = useReducedMotion()
+  const match = useMatch('/projects/:slug')
+  const openSlug = match?.params.slug
 
   useEffect(() => {
-    document.title = `${profile.nameEn} — ${profile.title} 포트폴리오`
-  }, [])
+    if (!openSlug) document.title = `${profile.nameEn} — ${profile.title} 포트폴리오`
+  }, [openSlug])
 
   // 인트로 중에는 본문 스크롤을 잠그고, 인트로 오버레이 안에서만 스크롤합니다.
   useLayoutEffect(() => {
@@ -48,7 +52,7 @@ export function Home() {
 
   return (
     <>
-      <div ref={pageRef} className="page" inert={!entered}>
+      <div ref={pageRef} className="page" inert={!entered || !!openSlug}>
         <a href="#projects" className="skip-link">
           프로젝트 목록으로 건너뛰기
         </a>
@@ -87,15 +91,11 @@ export function Home() {
           <section id="projects" className="projects" aria-labelledby="projects-title">
             <div className="section-head">
               <h2 id="projects-title" className="section-title">
-                Projects
+                Works
               </h2>
-              <p className="section-sub">문제를 정의하고, 대안을 비교하고, 화면으로 검증한 과정</p>
+              <p className="section-sub">작업을 누르면 프로젝트 창이 열립니다</p>
             </div>
-            <ul className="card-grid">
-              {projects.map((project, i) => (
-                <ProjectCard key={project.slug} project={project} index={i} />
-              ))}
-            </ul>
+            <WorksIndex projects={projects} />
           </section>
 
           <section id="about" className="about" aria-labelledby="about-title">
@@ -116,7 +116,9 @@ export function Home() {
           </section>
         </main>
         <SiteFooter />
+        <Mascot />
       </div>
+      <AnimatePresence>{entered && openSlug && <ProjectWindow key="pw" slug={openSlug} />}</AnimatePresence>
       {/* 움직임 줄이기: 퇴장 애니메이션 없이 즉시 제거 (3D 렌더링도 바로 중단) */}
       {reduced ? !entered && <IntroOverlay key="intro" /> : <AnimatePresence>{!entered && <IntroOverlay key="intro" />}</AnimatePresence>}
     </>

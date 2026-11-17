@@ -62,6 +62,10 @@ export interface Project {
   slug: string
   title: string
   titleEn: string
+  /** 타임라인 정렬·표시용 */
+  year: number
+  /** 목록에 보이는 짧은 분류 */
+  category: string
   /** 해결하려는 문제 (카드와 상세 상단에 표시) */
   question: Copy
   summary: Copy
@@ -79,6 +83,8 @@ export const projects: Project[] = [
     slug: 'seat-swap',
     title: '공연 티켓 좌석 교환',
     titleEn: 'Seat Swap',
+    year: 2025,
+    category: 'Mobile · 매칭 흐름',
     featured: true,
     question: '떨어진 두 자리를 어떻게 연석으로 바꿀까?',
     summary: draft(
@@ -203,6 +209,8 @@ export const projects: Project[] = [
     slug: 'year-end-tax',
     title: '연말정산 시뮬레이션',
     titleEn: 'Year-end Tax Simulator',
+    year: 2025,
+    category: 'Mobile Web · 시뮬레이터',
     question: '복잡한 공제 항목 앞에서, 내 환급액을 미리 가늠할 수 있을까?',
     summary: '급여와 지출 항목 몇 가지만 입력하면 예상 환급액이 바로 바뀌는 시뮬레이터. 어떤 공제를 더 챙기면 좋을지 한눈에 보여줍니다.',
     role: 'UX 리서치 · 정보 구조 · UI 디자인',
@@ -227,6 +235,8 @@ export const projects: Project[] = [
     slug: 'furniture-layout',
     title: '가구 배치 도구',
     titleEn: 'Furniture Layout',
+    year: 2024,
+    category: 'Web · 인터랙션',
     question: '가구를 사기 전에, 내 방에 잘 들어갈지 확인할 수 있을까?',
     summary: '방 크기를 입력하고 가구를 끌어다 놓으면 동선과 문 열림 반경까지 확인할 수 있는 배치 도구입니다.',
     role: '인터랙션 설계 · UI 디자인 · 프로토타입',
@@ -246,6 +256,38 @@ export const projects: Project[] = [
       aspect: '4 / 3',
       sketch: 'room',
     }),
+  },
+  {
+    slug: 'gallery-booking',
+    title: '전시 관람 예약',
+    titleEn: 'Gallery Booking',
+    year: 2024,
+    category: 'Mobile · 예약',
+    question: '붐비는 전시를 원하는 시간에 여유롭게 볼 수 있을까?',
+    summary: '시간대별 혼잡도를 보여주고, 원하는 관람 시간을 고르면 입장권과 동선 안내를 함께 주는 예약 흐름입니다. (샘플)',
+    role: 'UX 설계 · UI 디자인',
+    meta: [
+      { label: '기간', value: '2024.02 – 2024.04 (샘플)' },
+      { label: '플랫폼', value: '모바일 앱' },
+    ],
+    thumbnail: media({ alt: '전시 관람 예약 대표 화면', hint: '/projects/gallery-booking/thumb.png', aspect: '4 / 3', sketch: 'phone' }),
+    hero: media({ alt: '전시 관람 예약 대표 화면', hint: '/projects/gallery-booking/hero.png', aspect: '4 / 3', sketch: 'phone' }),
+  },
+  {
+    slug: 'plant-routine',
+    title: '반려식물 케어 루틴',
+    titleEn: 'Plant Routine',
+    year: 2023,
+    category: 'App · 습관 설계',
+    question: '물 주는 날을 잊지 않게, 부담 없이 챙길 수 있을까?',
+    summary: '식물마다 다른 물 주기와 햇빛 조건을 카드 한 장으로 정리하고, 알림 대신 하루 한 번의 체크로 루틴을 만드는 앱입니다. (샘플)',
+    role: 'UX 리서치 · UI 디자인',
+    meta: [
+      { label: '기간', value: '2023.09 – 2023.11 (샘플)' },
+      { label: '플랫폼', value: '모바일 앱' },
+    ],
+    thumbnail: media({ alt: '반려식물 케어 루틴 대표 화면', hint: '/projects/plant-routine/thumb.png', aspect: '4 / 3', sketch: 'chart' }),
+    hero: media({ alt: '반려식물 케어 루틴 대표 화면', hint: '/projects/plant-routine/hero.png', aspect: '4 / 3', sketch: 'chart' }),
   },
 ]
 

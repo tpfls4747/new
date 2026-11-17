@@ -14,16 +14,36 @@ export const KEYHOLE = new THREE.Vector3(0, -0.14, LOCK_FRONT_Z)
 /** 열쇠 로컬 좌표에서 손잡이(원점) → 끝까지의 거리 (+X 방향) */
 export const KEY_TIP_X = 1.55
 
-export function heartShape() {
+/** 둥근 하트 실루엣. k로 (0, 0.05) 기준 축소/확대, target에 Path를 넘기면 hole로 사용 */
+export function heartShape(k = 1, target: THREE.Path = new THREE.Shape()) {
+  const s = target
+  const cy = 0.05
+  const P = (x: number, y: number): [number, number] => [x * k, cy + (y - cy) * k]
+  const c = (a: number, b: number, c2: number, d: number, e: number, f: number) => s.bezierCurveTo(...P(a, b), ...P(c2, d), ...P(e, f))
+  s.moveTo(...P(0, -0.78))
+  c(-0.18, -0.7, -0.92, -0.26, -0.92, 0.22)
+  c(-0.92, 0.6, -0.66, 0.84, -0.44, 0.84)
+  c(-0.2, 0.84, -0.06, 0.7, 0, 0.56)
+  c(0.06, 0.7, 0.2, 0.84, 0.44, 0.84)
+  c(0.66, 0.84, 0.92, 0.6, 0.92, 0.22)
+  c(0.92, -0.26, 0.18, -0.7, 0, -0.78)
+  return s
+}
+
+/** 하트 앞면 가장자리의 금테 */
+export function heartRimShape() {
+  const outer = heartShape(1.0) as THREE.Shape
+  outer.holes.push(heartShape(0.88, new THREE.Path()))
+  return outer
+}
+
+/** 날개 깃털 한 장 (뿌리 0,0 → 끝 L,0) */
+export function featherShape(L = 0.8, w = 0.16) {
   const s = new THREE.Shape()
-  // 둥근 하트: 아래 끝을 뾰족하지 않게 다듬은 실루엣
-  s.moveTo(0, -0.78)
-  s.bezierCurveTo(-0.18, -0.7, -0.92, -0.26, -0.92, 0.22)
-  s.bezierCurveTo(-0.92, 0.6, -0.66, 0.84, -0.44, 0.84)
-  s.bezierCurveTo(-0.2, 0.84, -0.06, 0.7, 0, 0.56)
-  s.bezierCurveTo(0.06, 0.7, 0.2, 0.84, 0.44, 0.84)
-  s.bezierCurveTo(0.66, 0.84, 0.92, 0.6, 0.92, 0.22)
-  s.bezierCurveTo(0.92, -0.26, 0.18, -0.7, 0, -0.78)
+  s.moveTo(0, 0)
+  s.bezierCurveTo(L * 0.25, w * 1.1, L * 0.7, w * 0.9, L, w * 0.15)
+  s.bezierCurveTo(L * 0.92, -w * 0.25, L * 0.6, -w * 0.55, L * 0.3, -w * 0.4)
+  s.quadraticCurveTo(L * 0.1, -w * 0.3, 0, 0)
   return s
 }
 
